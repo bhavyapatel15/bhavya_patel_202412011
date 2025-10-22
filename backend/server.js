@@ -14,17 +14,26 @@ const reportRoutes = require('./routes/reports');
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "*", 
+  credentials: true
+}));
 app.use(express.json()); 
 app.use('/uploads', express.static(uploadDir)); 
 
-const MONGO = process.env.MONGODB_URI;
-mongo.connect(MONGO).catch(e => console.error('mongo', e));
+const MONGO = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/mydb"; 
+mongo.connect(MONGO)
+     .then(() => console.log("MongoDB connected"))
+     .catch(e => console.error("Mongo connection error:", e));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/reports', reportRoutes);
+
+app.get('/api/health', (req, res) => {
+  res.send("API is working!");
+});
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log('Server running on port', PORT));
