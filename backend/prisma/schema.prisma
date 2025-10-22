@@ -1,10 +1,12 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model User {
   id           Int      @id @default(autoincrement())
   name         String
@@ -13,6 +15,7 @@ model User {
   role         String
   orders       Order[]
 }
+
 model Order {
   id        Int         @id @default(autoincrement())
   userId    Int
@@ -21,6 +24,7 @@ model Order {
   items     OrderItem[]
   user      User        @relation(fields: [userId], references: [id])
 }
+
 model OrderItem {
   id               Int    @id @default(autoincrement())
   orderId          Int

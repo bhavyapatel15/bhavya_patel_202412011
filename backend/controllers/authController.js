@@ -11,13 +11,18 @@ async function register(req, res) {
     const { name, email, password } = req.body;
     if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
     if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email' });
-    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    if (String(password).length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(409).json({ error: 'User already exists' });
 
-    const hash = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({ data: { name: name.trim(), email, passwordHash: hash, role: 'customer' } });
+    const passwordStr = String(password);
+    const hash = await bcrypt.hash(passwordStr, 10);
+
+    const user = await prisma.user.create({
+      data: { name: name.trim(), email, passwordHash: hash, role: 'customer' }
+    });
+
     const token = sign({ id: user.id, name: user.name, role: user.role });
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (e) {
@@ -30,10 +35,13 @@ async function login(req, res) {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
+
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-    const ok = await bcrypt.compare(password, user.passwordHash);
+
+    const ok = await bcrypt.compare(String(password), user.passwordHash);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+
     const token = sign({ id: user.id, name: user.name, role: user.role });
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (e) {
